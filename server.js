@@ -5,15 +5,13 @@ const cors = require('cors');
 const NodeCache = require('node-cache');
 
 const app = express();
-// 5 min ke liye cache karega taaki Imginn block na kare
-const cache = new NodeCache({ stdTTL: 300 }); 
+const cache = new NodeCache({ stdTTL: 300 });
 
 app.use(cors());
 app.use(express.static('.'));
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-// 1. Image Proxy Router (Images ko block hone se bachane ke liye)
 app.get('/api/proxy-image', async (req, res) => {
     try {
         const imageUrl = req.query.url;
@@ -34,7 +32,6 @@ app.get('/api/proxy-image', async (req, res) => {
     }
 });
 
-// 2. Direct Imginn Scraper Engine
 async function scrapeImginn(username) {
     const url = `https://imginn.com/${username}/`;
     const response = await axios.get(url, {
@@ -46,7 +43,6 @@ async function scrapeImginn(username) {
 
     const $ = cheerio.load(response.data);
 
-    // Imginn ke HTML elements se raw values nikalna
     const rawPic = $('.user-avatar img').attr('src') \vert{}\vert{}$('.profile-avatar img').attr('src') || '';
     const profilePic = rawPic ? `/api/proxy-image?url=${encodeURIComponent(rawPic)}` : 'https://via.placeholder.com/150';
     
@@ -89,7 +85,6 @@ async function scrapeImginn(username) {
     };
 }
 
-// 3. Backup Scraper Engine (Picuki)
 async function scrapePicuki(username) {
     const url = `https://www.picuki.com/profile/${username}`;
     const response = await axios.get(url, { headers: { 'User-Agent': USER_AGENT } });
@@ -130,22 +125,18 @@ async function scrapePicuki(username) {
     };
 }
 
-// API Endpoint
 app.get('/api/user/:username', async (req, res) => {
     try {
         const username = req.params.username.toLowerCase();
         
-        // Cache Check
         if (cache.has(username)) {
             return res.json(cache.get(username));
         }
 
         let data;
         try {
-            // Step 1: Direct Imginn se Data Laana
             data = await scrapeImginn(username);
         } catch (imginnErr) {
-            // Step 2: Imginn Fail Hone Par Backup Picuki Se Data Laana
             data = await scrapePicuki(username);
         }
 
