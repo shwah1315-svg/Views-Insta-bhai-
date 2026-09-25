@@ -1,39 +1,366 @@
-<script>
-  lucide.createIcons();
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instagram Layout Viewer</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
 
-  async function searchUser() {
-    const username = document.getElementById('usernameInput').value.trim();
-    if (!username) return alert('Username daalein!');
+    body {
+      background-color: #ffffff;
+      color: #000000;
+      max-width: 470px;
+      margin: 0 auto;
+      border-left: 1px solid #dbdbdb;
+      border-right: 1px solid #dbdbdb;
+      min-height: 100vh;
+    }
 
-    try {
-      // Direct aapke render URL se connect hoga
-      const res = await fetch(`/api/user/${username}`);
-      const data = await res.json();
+    .search-container {
+      display: flex;
+      padding: 10px 15px;
+      gap: 10px;
+      background: #fafafa;
+      border-bottom: 1px solid #dbdbdb;
+    }
 
-      if(!data.success) return alert('User nahi mila ya account private hai!');
+    .search-container input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
+      font-size: 14px;
+    }
 
-      document.getElementById('headerUsername').innerText = data.username;
-      document.getElementById('displayName').innerText = data.displayName;
-      document.getElementById('bioText').innerText = data.bio;
-      document.getElementById('profilePic').src = data.profilePic;
-      document.getElementById('postsCount').innerText = data.postsCount;
-      document.getElementById('followersCount').innerText = data.followersCount;
-      document.getElementById('followingCount').innerText = data.followingCount;
+    .search-container button {
+      padding: 8px 15px;
+      background-color: #0095f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
 
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 15px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .header-username {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .header-icons {
+      display: flex;
+      gap: 18px;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      padding: 10px 15px;
+      justify-content: space-between;
+    }
+
+    .profile-pic {
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #dbdbdb;
+    }
+
+    .stats {
+      display: flex;
+      gap: 25px;
+      text-align: center;
+      padding-right: 15px;
+    }
+
+    .stat-item .count {
+      font-weight: 700;
+      font-size: 17px;
+    }
+
+    .stat-item .label {
+      font-size: 13px;
+      color: #000;
+    }
+
+    .bio-section {
+      padding: 5px 15px 15px 15px;
+    }
+
+    .display-name {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
+
+    .bio-text {
+      font-size: 14px;
+      white-space: pre-line;
+      line-height: 1.4;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      padding: 0 15px 15px 15px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 7px 0;
+      border-radius: 8px;
+      border: none;
+      background-color: #efefef;
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .btn-icon {
+      width: 35px;
+      flex: 0 0 auto;
+    }
+
+    .nav-tabs {
+      display: flex;
+      border-top: 1px solid #dbdbdb;
+    }
+
+    .tab-item {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 2px solid transparent;
+      color: #8e8e8e;
+    }
+
+    .tab-item.active {
+      border-bottom: 2px solid #000;
+      color: #000;
+    }
+
+    .posts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      background-color: #ffffff;
+    }
+
+    .grid-item {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      background-color: #f0f0f0;
+      cursor: pointer;
+    }
+
+    .grid-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .reel-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      color: white;
+    }
+
+    .skeleton {
+      animation: skeleton-loading 1s linear infinite alternate;
+    }
+
+    @keyframes skeleton-loading {
+      0% { background-color: #e0e0e0; }
+      100% { background-color: #f5f5f5; }
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .modal img {
+      max-width: 90%;
+      max-height: 70%;
+      border-radius: 8px;
+    }
+
+    .modal a {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #0095f6;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="search-container">
+    <input type="text" id="usernameInput" placeholder="Instagram Username dalein..." onkeypress="if(event.key === 'Enter') searchUser()">
+    <button onclick="searchUser()">Search</button>
+  </div>
+
+  <div class="header">
+    <div class="header-left">
+      <i data-lucide="arrow-left"></i>
+      <span class="header-username" id="headerUsername">username</span>
+    </div>
+    <div class="header-icons">
+      <i data-lucide="bell"></i>
+      <i data-lucide="more-vertical"></i>
+    </div>
+  </div>
+
+  <div class="profile-info">
+    <div>
+      <img src="https://via.placeholder.com/150" class="profile-pic" id="profilePic" alt="Profile">
+    </div>
+    <div class="stats">
+      <div class="stat-item">
+        <div class="count" id="postsCount">0</div>
+        <div class="label">posts</div>
+      </div>
+      <div class="stat-item">
+        <div class="count" id="followersCount">0</div>
+        <div class="label">followers</div>
+      </div>
+      <div class="stat-item">
+        <div class="count" id="followingCount">0</div>
+        <div class="label">following</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bio-section">
+    <div class="display-name" id="displayName">Display Name</div>
+    <div class="bio-text" id="bioText">User Bio text...</div>
+  </div>
+
+  <div class="action-buttons">
+    <button class="btn">Following <i data-lucide="chevron-down" style="width: 16px;"></i></button>
+    <button class="btn">Message</button>
+    <button class="btn btn-icon"><i data-lucide="user-plus" style="width: 18px;"></i></button>
+  </div>
+
+  <div class="nav-tabs">
+    <div class="tab-item active"><i data-lucide="grid"></i></div>
+    <div class="tab-item"><i data-lucide="clapperboard"></i></div>
+    <div class="tab-item"><i data-lucide="repeat"></i></div>
+    <div class="tab-item"><i data-lucide="contact-2"></i></div>
+  </div>
+
+  <div class="posts-grid" id="postsGrid"></div>
+
+  <div class="modal" id="imageModal">
+    <span onclick="closeModal()" style="position:absolute; top:20px; right:25px; color:white; font-size:30px; cursor:pointer;">&times;</span>
+    <img id="modalImg" src="">
+    <a id="downloadBtn" href="" download target="_blank">Download High Res Media</a>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    async function searchUser() {
+      const username = document.getElementById('usernameInput').value.trim();
+      if (!username) return alert('Username daalein!');
+
+      document.getElementById('displayName').innerText = 'Loading...';
       const grid = document.getElementById('postsGrid');
       grid.innerHTML = '';
 
-      data.posts.forEach(post => {
-        grid.innerHTML += `
-          <div class="grid-item">
-            <img src="${post.img}" alt="Post">
-            ${post.isVideo ? '<div class="reel-badge"><i data-lucide="play" style="width:18px; fill:white;"></i></div>' : ''}
-          </div>
-        `;
-      });
-      lucide.createIcons();
-    } catch(err) {
-      alert('Error fetching data!');
+      for(let i = 0; i < 9; i++) {
+        grid.innerHTML += `<div class="grid-item skeleton"></div>`;
+      }
+
+      try {
+        const res = await fetch(`/api/user/${username}`);
+        const data = await res.json();
+
+        if(!data.success) {
+          alert('User nahi mila ya account private hai!');
+          document.getElementById('displayName').innerText = 'User Not Found';
+          grid.innerHTML = '';
+          return;
+        }
+
+        document.getElementById('headerUsername').innerText = data.username;
+        document.getElementById('displayName').innerText = data.displayName;
+        document.getElementById('bioText').innerText = data.bio;
+        document.getElementById('profilePic').src = data.profilePic;
+        document.getElementById('postsCount').innerText = data.postsCount;
+        document.getElementById('followersCount').innerText = data.followersCount;
+        document.getElementById('followingCount').innerText = data.followingCount;
+
+        grid.innerHTML = '';
+        if(data.posts.length === 0) {
+          grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 20px;">Koi public posts nahi mile</p>';
+        } else {
+          data.posts.forEach(post => {
+            grid.innerHTML += `
+              <div class="grid-item" onclick="openModal('${post.img}')">
+                <img src="${post.img}" alt="Post" loading="lazy">
+                ${post.isVideo ? '<div class="reel-badge"><i data-lucide="play" style="width:18px; fill:white;"></i></div>' : ''}
+              </div>
+            `;
+          });
+        }
+        lucide.createIcons();
+      } catch(err) {
+        alert('Server Error!');
+        document.getElementById('displayName').innerText = 'Error';
+        grid.innerHTML = '';
+      }
     }
-  }
-</script>
+
+    function openModal(imgUrl) {
+      document.getElementById('modalImg').src = imgUrl;
+      document.getElementById('downloadBtn').href = imgUrl;
+      document.getElementById('imageModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('imageModal').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
