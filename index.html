@@ -1,0 +1,39 @@
+<script>
+  lucide.createIcons();
+
+  async function searchUser() {
+    const username = document.getElementById('usernameInput').value.trim();
+    if (!username) return alert('Username daalein!');
+
+    try {
+      // Direct aapke render URL se connect hoga
+      const res = await fetch(`/api/user/${username}`);
+      const data = await res.json();
+
+      if(!data.success) return alert('User nahi mila ya account private hai!');
+
+      document.getElementById('headerUsername').innerText = data.username;
+      document.getElementById('displayName').innerText = data.displayName;
+      document.getElementById('bioText').innerText = data.bio;
+      document.getElementById('profilePic').src = data.profilePic;
+      document.getElementById('postsCount').innerText = data.postsCount;
+      document.getElementById('followersCount').innerText = data.followersCount;
+      document.getElementById('followingCount').innerText = data.followingCount;
+
+      const grid = document.getElementById('postsGrid');
+      grid.innerHTML = '';
+
+      data.posts.forEach(post => {
+        grid.innerHTML += `
+          <div class="grid-item">
+            <img src="${post.img}" alt="Post">
+            ${post.isVideo ? '<div class="reel-badge"><i data-lucide="play" style="width:18px; fill:white;"></i></div>' : ''}
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    } catch(err) {
+      alert('Error fetching data!');
+    }
+  }
+</script>
